@@ -1,0 +1,46 @@
+buildscript {
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public/' }
+        maven { url 'https://maven.aliyun.com/repository/spring/' }
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.3.4.RELEASE'
+        classpath 'io.spring.gradle:dependency-management-plugin:1.0.10.RELEASE'
+    }
+}
+
+// 引用公共部分
+apply from: 'common.gradle'
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.boot:spring-boot-starter-parent:2.3.4.RELEASE'
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:Hoxton.SR8'
+        mavenBom 'com.alibaba.cloud:spring-cloud-alibaba-dependencies:2.2.3.RELEASE'
+    }
+    dependencies {
+
+        dependency 'com.google.guava:guava:29.0-jre'
+
+        // apache commons
+        dependency 'org.apache.commons:commons-lang3:3.9'
+        dependency 'org.apache.commons:commons-collections4:4.3'
+        dependency 'commons-io:commons-io:2.8.0'
+
+        // hutool
+        dependency 'cn.hutool:hutool-all:5.4.5'
+
+        // fastjson
+        dependency 'com.alibaba:fastjson:1.2.75'
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId project.name
+        }
+    }
+}

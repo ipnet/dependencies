@@ -1,0 +1,148 @@
+ext {
+    certificate = [
+            'username': 'access',
+            'password': 'access@123'
+    ]
+
+    propertyConfig = [
+            "network": [
+                    "key"    : "network",
+                    "values" : ["", ""],
+                    "default": "basic"
+            ],
+
+            "profile"    : [
+                    "key"    : "profile",
+                    "values" : ["local", "test", "prod"],
+                    "default": "local"
+            ]
+    ]
+
+    repositoryHost = [
+            "basic": "https://nexus.eblssmart.com"
+    ]
+
+    repositoryUri = [
+            'local': [
+                    'snapshot': '/repository/maven-snapshots/',
+                    'release' : '/repository/maven-releases/',
+                    'public'  : '/repository/maven-public/'
+            ],
+
+            'prod' : [
+                    'snapshot': '/repository/prod-maven-snapshots/',
+                    'release' : '/repository/prod-maven-releases/',
+                    'public'  : '/repository/prod-maven-public/'
+            ],
+            'test' : [
+                    'snapshot': '/repository/test-maven-snapshots/',
+                    'release' : '/repository/test-maven-releases/',
+                    'public'  : '/repository/test-maven-public/'
+            ]
+    ]
+}
+
+/**
+ * get properties from execute script
+ *
+ * @param p property name
+ * @return property value
+ */
+def property(p) {
+    if (Objects.isNull(propertyConfig[p])) {
+        throw new RuntimeException("Propertiy '$p' does not exists")
+    }
+
+    String key = propertyConfig[p]["key"]
+    List<String> values = propertyConfig[p]["values"]
+    String defaultValue = propertyConfig[p]["default"]
+
+    return project.hasProperty(key) && values.contains(project.getProperty(key))
+            ? project.getProperty(key) : defaultValue
+}
+
+
+def basicHost, profile, jarVersion
+
+basicHost = {
+    // -Pnetwork=<basic|other>
+    return repositoryHost[property("network")]
+}
+
+profile = {
+    // -Pprofile=<local|test|prod>
+    return property("profile")
+}
+
+jarVersion = {
+    return version.toLowerCase().endsWith("snapshot") ? "snapshot" : "release"
+}
+
+
+def repositoryUrl, publishUrl
+
+/**
+ * get repository url
+ */
+repositoryUrl = {
+    return basicHost() + repositoryUri[profile()]["public"]
+}
+
+/**
+ * get publish url
+ */
+publishUrl = {
+    return basicHost() + repositoryUri[profile()][jarVersion()]
+
+}
+
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'maven-publish'
+    apply plugin: 'io.spring.dependency-management'
+
+    group 'com.eblssmart.cscec'
+    version '1.0.0-SNAPSHOT'
+
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public/' }
+        maven { url repositoryUrl() }
+    }
+
+    publishing {
+        repositories {
+            maven {
+                // 此处只能调用方法获取，不能用常量
+                url = publishUrl()
+                credentials {
+                    username = certificate["username"]
+                    password = certificate["password"]
+                }
+            }
+        }
+    }
+}
+
+subprojects {
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+
+    dependencies {
+        compile 'org.apache.commons:commons-lang3:3.12.0'
+
+        compile 'cn.hutool:hutool-all'
+
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    }
+}
