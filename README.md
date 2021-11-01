@@ -7,7 +7,7 @@
 local environment
 
 ```sh
-gradlew clean publish -Pevn=local
+gradlew clean publish -Pprofile=local
 # or
 gradlew clean publish
 ```
@@ -15,13 +15,13 @@ gradlew clean publish
 test environment
 
 ```sh
-gradlew clean publish -Pevn=test
+gradlew clean publish -Pprofile=test
 ```
 
 prod environment
 
 ```sh
-gradlew clean publish -Pevn=prod
+gradlew clean publish -Pprofile=prod
 ```
 
 ### maven local build
